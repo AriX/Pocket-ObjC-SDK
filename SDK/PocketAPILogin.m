@@ -60,14 +60,6 @@ const NSString *PocketAPILoginFailedNotification = @"PocketAPILoginFailedNotific
 	reverseAuth = isReverseAuth;
 }
 
--(void)openURL:(NSURL *)url{
-#if TARGET_OS_IPHONE
-	[[UIApplication sharedApplication] openURL:url];
-#else
-	[[NSWorkspace sharedWorkspace] openURL:url];
-#endif
-}
-
 -(void)dealloc{
 	[operationQueue waitUntilAllOperationsAreFinished];
 	[operationQueue release], operationQueue = nil;
@@ -154,15 +146,14 @@ const NSString *PocketAPILoginFailedNotification = @"PocketAPILoginFailedNotific
 -(void)pocketAPI:(PocketAPI *)api receivedRequestToken:(NSString *)aRequestToken{
 	[self _setRequestToken:aRequestToken];
 	
-	NSURL *authorizeURL = nil;
 	NSString *encodedRedirectURLString = [PocketAPIOperation encodeForURL:[[self redirectURL] absoluteString]];
-	if([PocketAPI hasPocketAppInstalled]){
-		authorizeURL = [NSURL URLWithString:[NSString stringWithFormat:@"pocket-oauth-v1:///authorize?request_token=%@&redirect_uri=%@",requestToken, encodedRedirectURLString]];
-	}else{
-		authorizeURL = [NSURL URLWithString:[NSString stringWithFormat:@"https://getpocket.com/auth/authorize?request_token=%@&redirect_uri=%@",requestToken, encodedRedirectURLString]];
-	}
-	
-	[self openURL:authorizeURL];
+    [delegate pocketAPI:api requestedOpenURL:[NSURL URLWithString:[NSString stringWithFormat:@"pocket-oauth-v1:///authorize?request_token=%@&redirect_uri=%@",requestToken, encodedRedirectURLString]] completionHandler:^(BOOL success) {
+        if (!success)
+            [delegate pocketAPI:api requestedOpenURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://getpocket.com/auth/authorize?request_token=%@&redirect_uri=%@",requestToken, encodedRedirectURLString]] completionHandler:^(BOOL success) {
+                if (!success)
+                    [self pocketAPI:api hadLoginError:[NSError errorWithDomain:NSCocoaErrorDomain code:NSFeatureUnsupportedError userInfo:@{NSLocalizedDescriptionKey: @"Failed to open the Pocket authentication URL."}]];
+            }];
+    }];
 }
 
 -(void)pocketAPILoggedIn:(PocketAPI *)api{
@@ -207,10 +198,10 @@ const NSString *PocketAPILoginFailedNotification = @"PocketAPILoginFailedNotific
 		
 		[[NSNotificationCenter defaultCenter] postNotificationName:(NSString *)PocketAPILoginFinishedNotification object:nil];
 		
-		if(reverseAuth && [PocketAPI hasPocketAppInstalled]){
+		if(reverseAuth){
 			NSString *responseURLString = [NSString stringWithFormat:@"%@://reverse/%@/%i",[PocketAPI pocketAppURLScheme], (success ? @"success" : @"failed"), (int)[self.API appID]];
 			NSURL *responseURL = [NSURL URLWithString:responseURLString];
-			[self openURL:responseURL];
+            [delegate pocketAPI:self.API requestedOpenURL:responseURL completionHandler:nil];
 		}
 	}
 }

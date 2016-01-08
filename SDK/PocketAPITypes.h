@@ -24,6 +24,7 @@
 
 -(void)pocketAPIDidStartLogin:(PocketAPI *)api;
 -(void)pocketAPIDidFinishLogin:(PocketAPI *)api;
+-(void)pocketAPI:(PocketAPI *)api requestedOpenURL:(NSURL *)url completionHandler:(void (^)(BOOL success))completionHandler;
 @end
 
 @protocol PocketAPISupport <NSObject>

@@ -112,14 +112,6 @@ static PocketAPI *sSharedAPI = nil;
 	return @"pocket-oauth-v1";
 }
 
-+(BOOL)hasPocketAppInstalled{
-#if TARGET_OS_IPHONE
-	return [[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:[[self pocketAppURLScheme] stringByAppendingString:@":"]]];
-#else
-	return NO;
-#endif
-}
-
 +(NSString *)pkt_hashForConsumerKey:(NSString *)consumerKey accessToken:(NSString *)accessToken{
 	NSString *string = [NSString stringWithFormat:@"%@-%@",consumerKey, accessToken];
 	NSData *stringData = [string dataUsingEncoding:NSUTF8StringEncoding];
@@ -279,7 +271,7 @@ static PocketAPI *sSharedAPI = nil;
 		if([[url path] isEqualToString:@"/reverse"] && [urlQuery objectForKey:@"code"]){
 			BOOL allowReverseLogin = YES;
 #if TARGET_OS_IPHONE
-			id<PocketAPISupport> appDelegate = (id<PocketAPISupport>)[[UIApplication sharedApplication] delegate];
+            id<PocketAPISupport> appDelegate = (id<PocketAPISupport>)[[UIApplication performSelector:@selector(sharedApplication)] delegate];
 #else
 			id<PocketAPISupport> appDelegate = (id<PocketAPISupport>)[[NSApplication sharedApplication] delegate];
 #endif

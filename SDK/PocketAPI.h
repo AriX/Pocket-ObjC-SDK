@@ -65,7 +65,6 @@
 @property (nonatomic, retain) NSOperationQueue *operationQueue;
 
 +(PocketAPI *)sharedAPI;
-+(BOOL)hasPocketAppInstalled;
 +(NSString *)pocketAppURLScheme;
 
 -(void)setConsumerKey:(NSString *)consumerKey;
